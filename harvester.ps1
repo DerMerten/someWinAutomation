@@ -1,3 +1,13 @@
+############################################################# DONT TOUCH #############################################################
+
+# for pop-up
+Add-Type -AssemblyName PresentationFramework
+
+############################################################# NEED to EDIT #############################################################
+
+# Create CSV for gathered data
+$csvPath = 'C:\full\path\to\your\file.csv'
+
 ############################################################# GET ADMIN #############################################################
 # Function to check if the script is running as an administrator
 function Get-AdminRights {
@@ -6,28 +16,31 @@ function Get-AdminRights {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-# If the script is not running as an administrator, restart it with administrator rights
-if (-not (Get-AdminRights)) {
-    $newProcess = Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -PassThru
-    $newProcess.WaitForExit()
+#simple try-catch
+try {
+    # If the script is not running as an administrator, restart it with administrator rights
+    if (-not (Get-AdminRights)) {
+        $newProcess = Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -PassThru
+        $newProcess.WaitForExit()
+        exit
+    }
+}
+catch {
+
+    #get exception and print it in a messagebox
+    $message = $_
+    [System.Windows.MessageBox]::Show("Something went wrong getting sudo rights: $message", "ADMIN-RIGHTS")
     exit
 }
 
-# for pop-up
-Add-Type -AssemblyName PresentationFramework
-
 ############################################################# GET INFOS #############################################################
 
-#simple try-catch
+#simple try-catch again
 try {
 
     # Get PC-Infos
     Write-Host "getting PC-Infos..."
     $pcInfo = Get-ComputerInfo
-
-
-    # Create CSV for gathered data
-    $csvPath = 'C:\full\path\to\your\file.csv'
 
     if (-not (Test-Path $csvPath)) {
         $pcInfo | Export-Csv -Path $csvPath -NoTypeInformation
@@ -40,7 +53,7 @@ catch {
 
     #get exception and print it in a messagebox
     $message = $_
-    [System.Windows.MessageBox]::Show("Something went wrong with the csv-part, $message", "CSV-Error")
+    [System.Windows.MessageBox]::Show("Something went wrong with the csv-part: $message", "CSV-Error")
     exit
 }
 
@@ -60,12 +73,12 @@ try {
         Write-Host "Downloading and installing updates..."
 
         # Install updates
-        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll #-AutoReboot
+        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -AutoReboot
 
         # Restart the computer if necessary
         if ($getUpdates.RequiresReboot) {
             Write-Host "Restarting the system..."
-    #      Restart-Computer -Force
+          Restart-Computer -Force
         }
     } else {
         # No updates available
@@ -76,6 +89,6 @@ catch {
 
     #get exception and print it in a messagebox
     $message = $_
-    [System.Windows.MessageBox]::Show("Something went wrong during the update-part, $message", "Update-Error")
+    [System.Windows.MessageBox]::Show("Something went wrong during the update-part: $message", "Update-Error")
     exit
 }
