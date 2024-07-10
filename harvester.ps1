@@ -1,3 +1,4 @@
+############################################################# GET ADMIN #############################################################
 # Function to check if the script is running as an administrator
 function Get-AdminRights {
     $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -12,11 +13,24 @@ if (-not (Get-AdminRights)) {
     exit
 }
 
+############################################################# GET INFOS #############################################################
+
+
+
+
+
+
+
+
+
+
+############################################################# GET UPDATES #############################################################
 # Search for available updates
 $Updates = Get-WindowsUpdate -MicrosoftUpdate
 
 # Check if updates are available
 if ($Updates.Count -gt 0) {
+    
     # Download and install updates
     Write-Host "Downloading and installing updates..."
 
