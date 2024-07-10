@@ -13,44 +13,69 @@ if (-not (Get-AdminRights)) {
     exit
 }
 
+# for pop-up
+Add-Type -AssemblyName PresentationFramework
+
 ############################################################# GET INFOS #############################################################
 
+#simple try-catch
+try {
+
+    # Get PC-Infos
+    Write-Host "getting PC-Infos..."
+    $pcInfo = Get-ComputerInfo
 
 
+    # Create CSV for gathered data
+    $csvPath = 'C:\full\path\to\your\file.csv'
 
+    if (-not (Test-Path $csvPath)) {
+        $pcInfo | Export-Csv -Path $csvPath -NoTypeInformation
+    } else {
+        $pcInfo | Export-Csv -Path $csvPath -Append -NoTypeInformation
+    }
+    Write-Host "CSV successfully saved!"
+}
+catch {
 
-
-
-
-
+    #get exception and print it in a messagebox
+    $message = $_
+    [System.Windows.MessageBox]::Show("Something went wrong with the csv-part, $message", "CSV-Error")
+    exit
+}
 
 ############################################################# GET UPDATES #############################################################
-# Search for available updates
-$Updates = Get-WindowsUpdate -MicrosoftUpdate
 
-# Check if updates are available
-if ($Updates.Count -gt 0) {
-    
-    # Download and install updates
-    Write-Host "Downloading and installing updates..."
+#simple try-catch again 
+try {
 
-    # Progress bar for downloads
-    $totalProgress = 0
-    foreach ($Update in $Updates) {
-        $updateProgress = $Update.DownloadProgress * 100
-        Write-Progress -Activity "Downloading" -Status "Update $Update.Title: $updateProgress%" -PercentComplete $totalProgress
-        $totalProgress += $updateProgress
+    # Search for available updates
+    Write-Host "checking for updates..."
+    $getUpdates = Get-WindowsUpdate -MicrosoftUpdate
+
+    # Check if updates are available
+    if ($getUpdates.Count -gt 0) {
+
+        # Download and install updates
+        Write-Host "Downloading and installing updates..."
+
+        # Install updates
+        Install-WindowsUpdate -MicrosoftUpdate -AcceptAll #-AutoReboot
+
+        # Restart the computer if necessary
+        if ($getUpdates.RequiresReboot) {
+            Write-Host "Restarting the system..."
+    #      Restart-Computer -Force
+        }
+    } else {
+        # No updates available
+        Write-Host "No new updates found."
     }
+}
+catch {
 
-    # Install updates
-    Install-WindowsUpdate -MicrosoftUpdate -AcceptAll -AutoReboot
-
-    # Restart the computer if necessary
-    if ($Updates.RequiresReboot) {
-        Write-Host "Restarting the system..."
-        Restart-Computer -Force
-    }
-} else {
-    # No updates available
-    Write-Host "No new updates found."
+    #get exception and print it in a messagebox
+    $message = $_
+    [System.Windows.MessageBox]::Show("Something went wrong during the update-part, $message", "Update-Error")
+    exit
 }
