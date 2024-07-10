@@ -1,3 +1,4 @@
+
 ############################################################# GET ADMIN #############################################################
 # Function to check if the script is running as an administrator
 function Get-AdminRights {
