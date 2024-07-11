@@ -6,8 +6,7 @@ Add-Type -AssemblyName PresentationFramework
 ############################################################# NEED to EDIT #############################################################
 
 # Create CSV for gathered data
-$csvPath = 'C:\full\path\to\your\file.csv'
-
+$csvPath = 'C:\Path\to\your\file.csv'
 ############################################################# GET ADMIN #############################################################
 # Function to check if the script is running as an administrator
 function Get-AdminRights {
@@ -38,9 +37,32 @@ catch {
 #simple try-catch again
 try {
 
+    $selectedProp = @(
+        "Asset No",
+        "csName",
+        "CsPCSystemType",
+        "Device Status",
+        "CsManufacturer",
+        "csModel",
+        "CsSystemFamily", # just in case
+        "OsOrganization",
+        "Room",
+        "Location",
+        "OsLocalDateTime",
+        "Last Known User",
+        "Printer Connection",
+        "Ip Address",
+        "BiosSeralNumber"
+        "OsName",
+        "OSDisplayVersion",
+        "OsBuildNumber",
+        "Win Updates",
+        "Defender AV Def"
+        )
+
     # Get PC-Infos
     Write-Host "getting PC-Infos..."
-    $pcInfo = Get-ComputerInfo
+    $pcInfo = Get-ComputerInfo | Select-Object $selectedProp
 
     if (-not (Test-Path $csvPath)) {
         $pcInfo | Export-Csv -Path $csvPath -NoTypeInformation
