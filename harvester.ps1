@@ -6,7 +6,9 @@ Add-Type -AssemblyName PresentationFramework
 ############################################################# NEED to EDIT #############################################################
 
 # Create CSV for gathered data
-$csvPath = 'C:\Path\to\your\file.csv'
+$csvPathPc = 'C:\path\to\your\pcData.csv'
+$csvPathPrinter = 'C:\path\to\your\printerData.csv'
+
 ############################################################# GET ADMIN #############################################################
 # Function to check if the script is running as an administrator
 function Get-AdminRights {
@@ -37,7 +39,7 @@ catch {
 #simple try-catch again
 try {
 
-    $selectedProp = @(
+    $selectedInfoProp = @(
         "Asset No",
         "csName",
         "CsPCSystemType",
@@ -53,7 +55,7 @@ try {
         "Printer Connection",
         "Ip Address",
         "BiosSeralNumber"
-        "OsName",
+        "OsName", # for the printer-part
         "OSDisplayVersion",
         "OsBuildNumber",
         "Win Updates",
@@ -62,20 +64,82 @@ try {
 
     # Get PC-Infos
     Write-Host "getting PC-Infos..."
-    $pcInfo = Get-ComputerInfo | Select-Object $selectedProp
+    $pcInfo = Get-ComputerInfo | Select-Object $selectedInfoProp
 
-    if (-not (Test-Path $csvPath)) {
-        $pcInfo | Export-Csv -Path $csvPath -NoTypeInformation
+    if (-not (Test-Path $csvPathPc)) {
+        $pcInfo | Export-Csv -Path $csvPathPc -NoTypeInformation
     } else {
-        $pcInfo | Export-Csv -Path $csvPath -Append -NoTypeInformation
+        $pcInfo | Export-Csv -Path $csvPathPc -Append -NoTypeInformation
     }
-    Write-Host "CSV successfully saved!"
+    Write-Host "PC-Infos successfully saved in a CSV-File!"
 }
 catch {
 
     #get exception and print it in a messagebox
     $message = $_
-    [System.Windows.MessageBox]::Show("Something went wrong with the csv-part: $message", "CSV-Error")
+    [System.Windows.MessageBox]::Show("Something went wrong getting PC-Infos: $message", "PCINFOS-ERROR")
+    exit
+}
+
+############################################################# GET PRINTERS #############################################################
+
+# simple try-catch again
+try {
+
+    # Get all printers
+    $printers = Get-Printer
+
+    # Check if printers exist
+    if ($printers -eq $null) {
+        Write-Host "No printers found"
+        return
+    }
+
+    # Initialize a list for printer information
+    $printerInfoList = @()
+
+    # Retrieve port information for each printer
+    foreach ($printer in $printers) {
+        $printerName = $printer.Name
+        $driverName = $printer.DriverName
+        $portName = $printer.PortName
+        $shared = $printer.Shared
+
+        # Skip default MS printer / i dont wanna see it
+        if ($printerName -eq "OneNote (Desktop)" -or $printerName -eq "Microsoft Print to PDF" -or $printerName -eq "Microsoft XPS Document Writer" -or $printerName -eq "Fax") {
+            continue
+        }
+
+        # Get port information
+        $port = Get-PrinterPort -Name $portName
+
+        # Create an object with printer name and port description
+        $printerInfo = [PSCustomObject]@{
+            PrinterName     = $printerName
+            DriverName      = $driverName
+            PortName        = $portName
+            PortDescription = $port.Description
+            Shared          = $shared
+        }
+
+        # Add the object to the list
+        $printerInfoList += $printerInfo
+    }
+
+    # Write the printer information to the CSV file
+    if (-not (Test-Path $csvPathPrinter)) {
+        $printerInfoList | Export-Csv -Path $csvPathPrinter -NoTypeInformation
+    } else {
+        $printerInfoList | Export-Csv -Path $csvPathPrinter -Append -NoTypeInformation
+    }
+
+    Write-Host "Printers successfully saved in a CSV-File!"
+}
+catch {
+
+    # Get exception and display it in a messagebox
+    $message = $_
+    [System.Windows.MessageBox]::Show("Something went wrong getting printers: $message", "PRINTING-ERROR")
     exit
 }
 
@@ -100,7 +164,7 @@ try {
         # Restart the computer if necessary
         if ($getUpdates.RequiresReboot) {
             Write-Host "Restarting the system..."
-          Restart-Computer -Force
+            Restart-Computer -Force
         }
     } else {
         # No updates available
