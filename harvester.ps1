@@ -6,8 +6,8 @@ Add-Type -AssemblyName PresentationFramework
 ############################################################# NEED to EDIT #############################################################
 
 # Create CSV for gathered data
-$csvPathPc = 'C:\path\to\your\pcData.csv'
-$csvPathPrinter = 'C:\path\to\your\printerData.csv'
+$csvPathPc = 'C:\Path\To\Your\PCFile.csv'
+$csvPathPrinter = 'C:\Path\To\Your\printerInfo.csv'
 
 ############################################################# GET ADMIN #############################################################
 # Function to check if the script is running as an administrator
@@ -90,7 +90,7 @@ try {
     $printers = Get-Printer
 
     # Check if printers exist
-    if ($printers -eq $null) {
+    if ($printers -eq 0) {
         Write-Host "No printers found"
         return
     }
@@ -147,6 +147,14 @@ catch {
 
 #simple try-catch again 
 try {
+
+    # Install PSWindowsUpdate Module
+    if (-not (Get-Module -ListAvailable -Name PSWindowsUpdate)) {
+        Write-Host "PSWindowsUpdate module not found. Installing..."
+        Install-Module -Name PSWindowsUpdate -Force -Scope CurrentUser
+    } else {
+        Write-Host "PSWindowsUpdate module is already installed."
+    }
 
     # Search for available updates
     Write-Host "checking for updates..."
